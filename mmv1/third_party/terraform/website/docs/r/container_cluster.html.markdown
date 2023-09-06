@@ -943,6 +943,8 @@ sole_tenant_config {
 * `advanced_machine_features` - (Optional) Specifies options for controlling
   advanced machine features. Structure is [documented below](#nested_advanced_machine_features).
 
+* `fast_socket` - (Optional) Configuration of Fast Socket feature. You can enable/disable this feature for existing clusters. See the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/nccl-fast-socket) for more information. Structure is [documented below](#nested_fast_socket).
+
 <a name="nested_node_affinity"></a>The `node_affinity` block supports:
 
 * `key` (Required) - The default or custom node affinity label key name.
@@ -962,6 +964,10 @@ sole_tenant_config {
 <a name="nested_ephemeral_storage_local_ssd_config"></a>The `ephemeral_storage_local_ssd_config` block supports:
 
 * `local_ssd_count` (Required) - Number of local SSDs to use to back ephemeral storage. Uses NVMe interfaces. Each local SSD is 375 GB in size. If zero, it means to disable using local SSDs as ephemeral storage.
+
+<a name="nested_fast_socket"></a>The `fast_socket` block supports:
+
+* `enabled` (Required) - Whether Fast Socket features are enabled in the node pool.
 
 <a name="nested_local_nvme_ssd_block_config"></a>The `local_nvme_ssd_block_config` block supports:
 

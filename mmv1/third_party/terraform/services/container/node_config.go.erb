@@ -279,6 +279,23 @@ func schemaNodeConfig() *schema.Schema {
 					},
 				},
 
+				"fast_socket": {
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					ForceNew:    true,
+					Description: `Configuration of Fast Socket feature.`,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"enabled": {
+								Type:        schema.TypeBool,
+								Required:    true,
+								Description: `Whether Fast Socket features are enabled in the node pool.`,
+							},
+						},
+					},
+				},
+
 				"machine_type": {
 					Type:     schema.TypeString,
 					Optional: true,
@@ -779,6 +796,10 @@ func expandNodeConfig(v interface{}) *container.NodeConfig {
 		}
 	}
 
+	if v, ok := nodeConfig["fast_socket"]; ok {
+		nc.FastSocket = expandFastSocket(v)
+	}
+
 	if v, ok := nodeConfig["reservation_affinity"]; ok && len(v.([]interface{})) > 0 {
 		conf := v.([]interface{})[0].(map[string]interface{})
 		valuesSet := conf["values"].(*schema.Set)
@@ -1058,6 +1079,17 @@ func expandConfidentialNodes(configured interface{}) *container.ConfidentialNode
 	}
 }
 
+func expandFastSocket(configured interface{}) *container.FastSocket {
+	l := configured.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return nil
+	}
+	config := l[0].(map[string]interface{})
+	return &container.FastSocket{
+		Enabled: config["enabled"].(bool),
+	}
+}
+
 func flattenNodeConfigDefaults(c *container.NodeConfigDefaults) []map[string]interface{} {
         result := make([]map[string]interface{}, 0, 1)
 
@@ -1096,6 +1128,7 @@ func flattenNodeConfig(c *container.NodeConfig) []map[string]interface{} {
 		"ephemeral_storage_local_ssd_config": flattenEphemeralStorageLocalSsdConfig(c.EphemeralStorageLocalSsdConfig),
 		"gcfs_config":              flattenGcfsConfig(c.GcfsConfig),
 		"gvnic":										flattenGvnic(c.Gvnic),
+		"fast_socket":              flattenFastSocket(c.FastSocket),
 		"reservation_affinity":     flattenGKEReservationAffinity(c.ReservationAffinity),
 		"service_account":          c.ServiceAccount,
 		"metadata":                 c.Metadata,
@@ -1229,6 +1262,16 @@ func flattenGcfsConfig(c *container.GcfsConfig) []map[string]interface{} {
 }
 
 func flattenGvnic(c *container.VirtualNIC) []map[string]interface{} {
+	result := []map[string]interface{}{}
+	if c != nil {
+		result = append(result, map[string]interface{}{
+			"enabled": c.Enabled,
+		})
+	}
+	return result
+}
+
+func flattenFastSocket(c *container.FastSocket) []map[string]interface{} {
 	result := []map[string]interface{}{}
 	if c != nil {
 		result = append(result, map[string]interface{}{

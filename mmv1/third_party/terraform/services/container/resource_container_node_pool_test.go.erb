@@ -1191,6 +1191,37 @@ func TestAccContainerNodePool_shieldedInstanceConfig(t *testing.T) {
 	})
 }
 
+func TestAccContainerNodePool_fastSocket(t *testing.T) {
+	t.Parallel()
+
+	cluster := fmt.Sprintf("tf-test-cluster-%s", acctest.RandString(t, 10))
+	np := fmt.Sprintf("tf-test-nodepool-%s", acctest.RandString(t, 10))
+
+	acctest.VcrTest(t, resource.TestCase{
+		PreCheck:                 func() { acctest.AccTestPreCheck(t) },
+		ProtoV5ProviderFactories: acctest.ProtoV5ProviderFactories(t),
+		CheckDestroy:             testAccCheckContainerNodePoolDestroyProducer(t),
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccContainerNodePool_fastSocket(cluster, np, true),
+			},
+			resource.TestStep{
+				ResourceName:      "google_container_node_pool.np",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			resource.TestStep{
+				Config: testAccContainerNodePool_fastSocket(cluster, np, false),
+			},
+			resource.TestStep{
+				ResourceName:      "google_container_node_pool.np",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func TestAccContainerNodePool_concurrent(t *testing.T) {
 	t.Parallel()
 
@@ -3179,6 +3210,36 @@ resource "google_container_node_pool" "np" {
   }
 }
 `, cluster, np)
+}
+
+func testAccContainerNodePool_fastSocket(cluster, np string, enabled bool) string {
+	return fmt.Sprintf(`
+resource "google_container_cluster" "cluster" {
+  name               = "%s"
+  location           = "us-central1-f"
+  initial_node_count = 1
+}
+
+resource "google_container_node_pool" "np" {
+  name               = "%s"
+  location           = "us-central1-f"
+  cluster            = google_container_cluster.cluster.name
+  initial_node_count = 1
+  node_config {
+    machine_type = "n1-standard-2"
+    guest_accelerator {
+      count = 1
+      type  = "nvidia-tesla-p100"
+    }
+    gvnic {
+      enabled = true
+    }
+    fast_socket {
+      enabled = %t
+    }
+  }
+}
+`, cluster, np, enabled)
 }
 
 func testAccContainerNodePool_concurrentCreate(cluster, np1, np2 string) string {
